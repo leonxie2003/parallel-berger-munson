@@ -5,8 +5,10 @@
  */
 
 #include "bm_seq.h"
+#include "parse_fasta.h"
 
 #include <iostream>
+#include <vector>
 #include <string>
 
 #include <unistd.h>
@@ -38,6 +40,11 @@ int main(int argc, char *argv[]) {
 
     // parse FASTA file
     std::cout << "Input file: " << input_filename << "\n";
+    std::vector<std::string> seqs = parse_fasta(input_filename);
+
+    for (std::string seq : seqs) {
+        std::cout << seq << "\n";
+    }
 
     // begin alignment
 }
