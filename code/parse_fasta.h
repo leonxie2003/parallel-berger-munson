@@ -6,4 +6,12 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> parse_fasta(std::string filename);
+typedef struct fasta_seq {
+    std::string id;
+    std::string desc;
+    std::string seq;
+} fasta_seq_t;
+
+std::vector<fasta_seq_t> parse_fasta(std::string filename);
+
+void print_fasta_seq(fasta_seq_t seq);

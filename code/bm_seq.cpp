@@ -40,11 +40,14 @@ int main(int argc, char *argv[]) {
 
     // parse FASTA file
     std::cout << "Input file: " << input_filename << "\n";
-    std::vector<std::string> seqs = parse_fasta(input_filename);
+    std::vector<fasta_seq_t> seqs = parse_fasta(input_filename); // TODO use a struct for seqs to maintain id & desc
 
-    for (std::string seq : seqs) {
-        std::cout << seq << "\n";
+    for (fasta_seq_t seq : seqs) {
+        print_fasta_seq(seq);
     }
 
     // begin alignment
+
+    // (1) start with basic alignemtn
+    // (2) iterative improve
 }
