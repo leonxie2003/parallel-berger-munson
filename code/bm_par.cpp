@@ -11,15 +11,15 @@
 #include <string>
 
 #include <unistd.h>
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
     /* --- parse cmd line args --- */
     std::string input_filename;
     std::string output_filename;
-    int num_procs;
 
     int opt;
-    while((opt = getopt(argc, argv, "i:o:n:")) != -1) {
+    while((opt = getopt(argc, argv, "i:o:")) != -1) {
         switch (opt) {
             case 'i':
                 input_filename = optarg;
@@ -27,17 +27,14 @@ int main(int argc, char *argv[]) {
             case 'o':
                 output_filename = optarg;
                 break;
-            case 'n':
-                num_procs = atoi(optarg);
-                break;
         default:
-            std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename -n num_processors\n";
+            std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename\n";
             exit(EXIT_FAILURE);
         }
     }
 
-    if (empty(input_filename) || empty(output_filename) || num_procs < 1) {
-        std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename -n num_processors\n";
+    if (empty(input_filename) || empty(output_filename)) {
+        std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename\n";
         exit(EXIT_FAILURE);
     }
 
@@ -52,4 +49,13 @@ int main(int argc, char *argv[]) {
     }
 
     // begin alignment
+    int pid;
+    int nproc;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &pid);
+    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+
+    std::cout << "Hello from processor " << pid << " of " << nproc << "\n";
+
+    MPI_Finalize();
 }
