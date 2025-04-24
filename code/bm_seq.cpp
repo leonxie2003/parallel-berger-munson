@@ -6,6 +6,7 @@
 
 #include "bm_seq.h"
 #include "parse_fasta.h"
+#include "align.h"
 
 #include <iostream>
 #include <vector>
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
     }
 
     // begin alignment
+
 
     // (1) start with basic alignemtn
     // (2) iterative improve

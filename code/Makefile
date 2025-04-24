@@ -8,6 +8,8 @@ BM_PAR_OBJS=bm_par.o $(COMMON_OBJS)
 CXX = mpic++
 CXXFLAGS = -Wall -O3 -std=c++17 -m64 -I.
 
+DOC = doxygen
+
 all: $(BM_SEQ) $(BM_PAR)
 
 $(BM_SEQ): $(BM_SEQ_OBJS)
@@ -18,6 +20,9 @@ $(BM_PAR): $(BM_PAR_OBJS)
 
 %.o: $.cpp $.h
 	$(CXX) $(CXXFLAGS) -c $<
+
+docs:
+	$(DOC) doxygen.conf
 
 clean:
 	/bin/rm -rf *.o $(BM_SEQ) $(BM_PAR)
