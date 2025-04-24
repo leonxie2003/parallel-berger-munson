@@ -35,4 +35,6 @@ typedef std::vector<gap_option_t> gap_pos_t;
  */
 int align_groups(seq_group_t group1, seq_group_t group2, gap_pos_t& gap_pos);
 
+void update_alnmt(seq_group_t& alnmt, gap_pos_t& gap_pos);
+
 #endif

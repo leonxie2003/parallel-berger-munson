@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <iostream>
-
 seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
     seq_group_t naiive_alnmt{};
     size_t longest = 0;
@@ -17,9 +15,7 @@ seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
             longest = fasta_seq.seq.size();
         }
 
-        std::cout << fasta_seq.seq.size() << "\n";
     }
-    std::cout << longest <<"\n";
 
     for (seq_t& seq : naiive_alnmt) {
         size_t seq_size = seq.size();

@@ -10,8 +10,9 @@
 #include "bm_utils.h"
 
 #include <iostream>
-#include <vector>
+#include <limits.h>
 #include <string>
+#include <vector>
 
 #include <unistd.h>
 
@@ -54,35 +55,34 @@ int main(int argc, char *argv[]) {
     /* --- Berger-Munson algorithm --- */
 
     // construct naiive alignment (add gaps until all same length)
-    seq_group_t curr_alnmt = naiive_alnmt(fasta_seqs);
+    seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
     std::cout << "Naiive alignment:\n";
-    for (seq_t seq : curr_alnmt) {
-        std::cout << seq << "\n\n";
+    for (seq_t seq : cur_alnmt) {
+        std::cout << seq << "\n";
     }
+    std::cout << "\n";
 
     // iteratively improve alignment
 
     // TODO Replace with "q reject in a row", right now is just constant num of
     // iterations
     int glbl_idx = 0;
+    int best_score = INT_MIN;
     while (glbl_idx < 1) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
-        select_partn(curr_alnmt, glbl_idx, group1, group2);
-
-        std::cout << "Group 1:\n";
-        for (seq_t seq : group1) {
-            std::cout << seq << "\n\n";
-        }
-
-        std::cout << "Group 2:\n";
-        for (seq_t seq : group2) {
-            std::cout << seq << "\n\n";
-        }
+        select_partn(cur_alnmt, glbl_idx, group1, group2);
 
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
+
+        gap_pos_t gap_pos{};
+        int cur_score = align_groups(group1, group2, gap_pos);
+
+        if (cur_score > best_score) {
+            update_alnmt(cur_alnmt, gap_pos);
+        }
 
         glbl_idx++;
     }
