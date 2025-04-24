@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     // iterations
     int glbl_idx = 0;
     int best_score = INT_MIN;
-    while (glbl_idx < 1) {
+    while (glbl_idx < 10) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
@@ -76,6 +76,19 @@ int main(int argc, char *argv[]) {
 
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
+
+        std::cout << "===== glbl_indx: " << glbl_idx << " =====\n";
+        std::cout << "Group 1: \n";
+        for (seq_t seq: group1) {
+            std::cout << seq << "\n";
+        }
+        std::cout << "\n";
+
+        std::cout << "Group 2: \n";
+        for (seq_t seq: group2) {
+            std::cout << seq << "\n";
+        }
+        std::cout << "\n";
 
         gap_pos_t gap_pos{};
         int cur_score = align_groups(group1, group2, gap_pos);
