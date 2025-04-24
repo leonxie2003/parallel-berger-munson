@@ -4,6 +4,9 @@
  *  @author Taekseung Kim (taekseuk)
  */
 
+#ifndef __ALIGN_H__
+#define __ALIGN_H__
+
 #include <string>
 #include <vector>
 
@@ -22,9 +25,8 @@ typedef struct gap_option {
 typedef std::vector<gap_option_t> gap_pos_t;
 
 /**
- * Aligns two sequence groups, saving the new gaps in
+ * Aligns two sequence groups, saving the new gaps.
  *
- * Corresponds to "calculate" in Yap et. al. pseudocode.
  *
  * @param group1
  * @param group2
@@ -32,3 +34,5 @@ typedef std::vector<gap_option_t> gap_pos_t;
  * @return Score of the resulting alignment.
  */
 int align_groups(seq_group_t group1, seq_group_t group2, gap_pos_t& gap_pos);
+
+#endif

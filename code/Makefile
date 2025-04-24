@@ -1,7 +1,7 @@
 BM_SEQ=bm_seq
 BM_PAR=bm_par
 
-COMMON_OBJS=parse_fasta.o
+COMMON_OBJS=parse_fasta.o align.o bm_utils.o
 BM_SEQ_OBJS=bm_seq.o $(COMMON_OBJS)
 BM_PAR_OBJS=bm_par.o $(COMMON_OBJS)
 
