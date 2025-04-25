@@ -13,18 +13,12 @@
 typedef std::string seq_t;
 typedef std::vector<seq_t> seq_group_t;
 
+typedef std::vector<std::vector<int>> matrix_t;
 
-
-/**
- * Paramters that are used for alignment process
- * gapPenalty: Penalty for using a gap. 
- * diff: 
- */
-int gapPenalty;
-int diff;
-std::vector<std::vector<int>> scoreMatrix;
-std::vector<std::vector<int>> backTrackMatrix;
-
+typedef struct align_params {
+    int gap_penalty;
+    int sub_penalty; // TODO replace with subst matrix
+} align_params_t;
 
 /**
  * Data structure to represent gap positions. After alignment, each position
