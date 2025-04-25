@@ -16,6 +16,7 @@ typedef std::vector<seq_t> seq_group_t;
 typedef std::vector<std::vector<int>> matrix_t;
 
 typedef struct align_params {
+    int match_reward;
     int gap_penalty;
     int sub_penalty; // TODO replace with subst matrix
 } align_params_t;

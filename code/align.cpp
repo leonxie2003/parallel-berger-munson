@@ -8,20 +8,73 @@
 #define VERTICAL 1
 #define DIAGONAL 2
 
+int sub_residue(char res1, char res2, align_params_t& params) {
+    if (res1 == '-' && res2 == '-') {
+        return 0;
+    } else if (res1 == res2) {
+        return params.match_reward;
+    } else if (res1 == '-' || res2 == '-') {
+        return params.gap_penalty;
+    } else {
+        return params.sub_penalty;
+    }
+}
 
-// Score calculation between two sequence groups.
-int score_group_subst(const seq_group_t& group1, const seq_group_t& group2, int i, int j, align_params_t params){
-    int result = 0;
+// Inserting a gap to the *other* group, against index i of group
+int gap_score(int num_gaps, seq_group_t& group, int i, align_params_t& params) {
+    int score = 0;
 
-    for(int k = 0; k < group1.size(); k++){
-        for(int l = 0; l < group2.size(); l++){
-            if(group1[k][i] != group2[l][j]){
-                result += params.sub_penalty;
-            }
+    // Calculate score within group
+    for (int k = 0; k < group.size() - 1; k++) {
+        for (int m = k + 1; m < group.size(); m++) {
+            score += sub_residue(group[k][i], group[m][i], params);
         }
     }
 
-    return result;
+    // Calculate score within gaps (should be all 0, gap-against-gap is 0)
+    // for (int l = 0; l < num_gaps - 1; l++) {
+    //    for (int m = l + 1; m < num_gaps, m++) {
+    //        score += sub_residue('-', '-', params);
+    //    }
+    // }
+
+    // Calcualte score between gaps and group
+    for (int k = 0; k < group.size(); k++) {
+        // for (int l = 0; l < num_gaps; l++) {
+        //    score += sub_residue(group[k][i], '-');
+        // }
+        score += num_gaps * sub_residue(group[k][i], '-', params);
+    }
+
+    return -1;
+}
+
+// Score calculation between two sequence groups.
+int sub_score(seq_group_t& group1, seq_group_t& group2, int i, int j, align_params_t& params){
+    int score = 0;
+
+    // Calculate score within group 1
+    for (int k = 0; k < group1.size() - 1; k++) {
+        for (int m = k + 1; m < group1.size(); m++) {
+            score += sub_residue(group1[k][i], group1[m][i], params);
+        }
+    }
+
+    // Calculate score within group 2
+    for (int l = 0; l < group2.size() - 1; l++) {
+        for (int m = l + 1; m < group2.size(); m++) {
+            score += sub_residue(group2[l][j], group2[m][j], params);
+        }
+    }
+
+    // Calculate score between groups
+    for(int k = 0; k < group1.size(); k++){
+        for(int l = 0; l < group2.size(); l++){
+            score += sub_residue(group1[k][i], group2[l][j], params);
+        }
+    }
+
+    return score;
 }
 
 /**
@@ -31,7 +84,7 @@ int score_group_subst(const seq_group_t& group1, const seq_group_t& group2, int 
  * @pre group1 and group2 each have uniform length sequences
  * @return score of resulting alignment
  */
-int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t params, matrix_t& score, matrix_t& backtrack){
+int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t& params, matrix_t& score, matrix_t& backtrack){
     /**
      * S[i,j] = max {
      *   S[i,j-1] + group1.size() * gap,
@@ -58,9 +111,9 @@ int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t params
     for (int i = 1; i < num_rows; i++) {
         for (int j = 1; j < num_cols; j++) {
             // Calculate scores for three possible moves
-            int horizontal = score[i][j-1] + params.gap_penalty * group1.size();  // Gap in group1
-            int vertical = score[i-1][j] + params.gap_penalty * group2.size();    // Gap in group2
-            int diagonal = score[i-1][j-1] + score_group_subst(group1, group2, i-1, j-1, params);
+            int horizontal = score[i][j-1] + gap_score(group1.size(), group2, j, params);  // Gap in group1
+            int vertical = score[i-1][j] + gap_score(group2.size(), group1, i, params);    // Gap in group2
+            int diagonal = score[i-1][j-1] + sub_score(group1, group2, i-1, j-1, params);
 
             // Find the maximum score
             int maxScore = horizontal;
@@ -125,7 +178,7 @@ void backward_pass(matrix_t& backtrack, gap_pos_t& gap_pos){
 
 
 
-int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t params, gap_pos_t& gap_pos) {
+int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& params, gap_pos_t& gap_pos) {
     // Initialize matrices
     int num_rows = group1[0].length() + 1;
     int num_cols = group2[0].length() + 1;
@@ -135,10 +188,10 @@ int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t params
     score.resize(num_rows, std::vector<int>(num_cols, 0));
     backtrack.resize(num_rows, std::vector<int>(num_cols, 0));
 
-    forward_pass(group1, group2, params, score, backtrack);
+    int alnmt_score = forward_pass(group1, group2, params, score, backtrack);
     backward_pass(backtrack, gap_pos);
 
-    return 0;
+    return alnmt_score;
 }
 
 void update_alnmt(seq_group_t& alnmt, gap_pos_t& gap_pos) {
