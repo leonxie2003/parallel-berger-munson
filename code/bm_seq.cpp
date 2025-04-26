@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
     std::cout << "Final alignment (score = " << best_score << "):\n";
     for (seq_t seq : cur_alnmt) {
-        std::cout << "seq " << std::setw(3) << seq.id << " :";
+        std::cout << "seq " << std::setw(3) << seq.id << ": ";
         std::cout << seq.data << "\n";
     }
 }
