@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Input file: " << input_filename << "\n";
     std::vector<fasta_seq_t> fasta_seqs = parse_fasta(input_filename); // TODO use a struct for seqs to maintain id & desc
 
-    for (fasta_seq_t seq : fasta_seqs) {
-        print_fasta_seq(seq);
+    for (fasta_seq_t fasta_seq : fasta_seqs) {
+        print_fasta_seq(fasta_seq);
     }
 
     /* --- Berger-Munson algorithm --- */
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
     std::cout << "Naiive alignment:\n";
     for (seq_t seq : cur_alnmt) {
-        std::cout << seq << "\n";
+        std::cout << seq.data << "\n";
     }
     std::cout << "\n";
 
@@ -79,22 +79,27 @@ int main(int argc, char *argv[]) {
 
         std::cout << "===== glbl_indx: " << glbl_idx << " =====\n";
         std::cout << "Group 1: \n";
-        for (seq_t seq: group1) {
-            std::cout << seq << "\n";
+        for (seq_t group1_seq: group1) {
+            std::cout << group1_seq.data << "\n";
         }
         std::cout << "\n";
 
         std::cout << "Group 2: \n";
-        for (seq_t seq: group2) {
-            std::cout << seq << "\n";
+        for (seq_t group2_seq: group2) {
+            std::cout << group2_seq.data << "\n";
         }
         std::cout << "\n";
 
         gap_pos_t gap_pos{};
-        int cur_score = align_groups(group1, group2, gap_pos);
+        align_params_t params{};
+        params.match_reward = 1;
+        params.gap_penalty = -1;
+        params.sub_penalty = 0;
+
+        int cur_score = align_groups(group1, group2,  params, gap_pos);
 
         if (cur_score > best_score) {
-            update_alnmt(cur_alnmt, gap_pos);
+            cur_alnmt = update_alnmt(group1, group2, gap_pos);
         }
 
         glbl_idx++;

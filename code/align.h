@@ -10,7 +10,10 @@
 #include <string>
 #include <vector>
 
-typedef std::string seq_t;
+typedef struct seq {
+    int id;
+    std::string data;
+} seq_t;
 typedef std::vector<seq_t> seq_group_t;
 
 typedef std::vector<std::vector<int>> matrix_t;
@@ -41,8 +44,8 @@ typedef std::vector<gap_option_t> gap_pos_t;
  * @param gap_pos
  * @return Score of the resulting alignment.
  */
-int align_groups(seq_group_t group1, seq_group_t group2, gap_pos_t& gap_pos);
+int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& params, gap_pos_t& gap_pos);
 
-void update_alnmt(seq_group_t& alnmt, gap_pos_t& gap_pos);
+seq_group_t update_alnmt(seq_group_t& group1, seq_group_t& group2, gap_pos_t& gap_pos);
 
 #endif

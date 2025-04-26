@@ -10,19 +10,22 @@
 seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
     seq_group_t naiive_alnmt{};
     size_t longest = 0;
-    for (fasta_seq_t fasta_seq : fasta_seqs) {
-        naiive_alnmt.push_back(fasta_seq.seq);
+    for (size_t i = 0; i < fasta_seqs.size(); i++) {
+        seq_t seq;
+        seq.id = i;
+        seq.data = fasta_seqs[i].seq;
+        naiive_alnmt.push_back(seq);
 
-        if (fasta_seq.seq.size() > longest) {
-            longest = fasta_seq.seq.size();
+        if (fasta_seqs[i].seq.size() > longest) {
+            longest = fasta_seqs[i].seq.size();
         }
 
     }
 
     for (seq_t& seq : naiive_alnmt) {
-        size_t seq_size = seq.size();
-        for (size_t i = 0; i < longest - seq_size; i++)
-            seq.append("-");
+        size_t seq_len = seq.data.size();
+        for (size_t i = 0; i < longest - seq_len; i++)
+            seq.data.append("-");
     }
 
     return naiive_alnmt;
@@ -68,13 +71,13 @@ void select_partn(seq_group_t seqs, int glbl_idx, seq_group_t& group1, seq_group
 }
 
 void remove_glbl_gaps(seq_group_t& group) {
-    size_t seq_len = group[0].size();
+    size_t seq_len = group[0].data.size();
 
     for (int i = seq_len - 1; i >= 0; i--) {
 
         bool all_gap = true;
         for (seq_t& seq : group) {
-            if (seq[i] != '-') {
+            if (seq.data[i] != '-') {
                 all_gap = false;
                 break;
             }
@@ -82,7 +85,7 @@ void remove_glbl_gaps(seq_group_t& group) {
 
         if (all_gap) {
             for (seq_t& seq : group)
-                seq.erase(i, 1);
+                seq.data.erase(i, 1);
         }
     }
 

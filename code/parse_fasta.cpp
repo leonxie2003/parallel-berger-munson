@@ -36,10 +36,10 @@ std::vector<fasta_seq_t> parse_fasta(std::string filename) {
 
             size_t space_pos = input_line.find(" ");
             if (space_pos != std::string::npos) {
-                cur_seq.id = input_line.substr(1, space_pos - 1);
+                cur_seq.ident = input_line.substr(1, space_pos - 1);
                 cur_seq.desc = input_line.substr(space_pos);
             } else {
-                cur_seq.id = input_line.substr(1);
+                cur_seq.ident = input_line.substr(1);
                 cur_seq.desc = "";
             }
             cur_seq.seq = "";
@@ -53,7 +53,7 @@ std::vector<fasta_seq_t> parse_fasta(std::string filename) {
 }
 
 void print_fasta_seq(fasta_seq_t seq) {
-    std::cout << "FASTA sequence ID: " << seq.id << "\n";
+    std::cout << "FASTA sequence ID: " << seq.ident << "\n";
     std::cout << "Description: " << seq.desc << "\n";
     std::cout << "Sequence: " << seq.seq << "\n";
     std::cout << "\n";

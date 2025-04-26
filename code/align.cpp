@@ -25,25 +25,25 @@ int gap_score(int num_gaps, seq_group_t& group, int i, align_params_t& params) {
     int score = 0;
 
     // Calculate score within group
-    for (int k = 0; k < group.size() - 1; k++) {
-        for (int m = k + 1; m < group.size(); m++) {
-            score += sub_residue(group[k][i], group[m][i], params);
+    for (size_t k = 0; k < group.size() - 1; k++) {
+        for (size_t m = k + 1; m < group.size(); m++) {
+            score += sub_residue(group[k].data[i], group[m].data[i], params);
         }
     }
 
     // Calculate score within gaps (should be all 0, gap-against-gap is 0)
-    // for (int l = 0; l < num_gaps - 1; l++) {
-    //    for (int m = l + 1; m < num_gaps, m++) {
+    // for (size_t l = 0; l < num_gaps - 1; l++) {
+    //    for (size_t m = l + 1; m < num_gaps, m++) {
     //        score += sub_residue('-', '-', params);
     //    }
     // }
 
     // Calcualte score between gaps and group
-    for (int k = 0; k < group.size(); k++) {
-        // for (int l = 0; l < num_gaps; l++) {
+    for (size_t k = 0; k < group.size(); k++) {
+        // for (size_t l = 0; l < num_gaps; l++) {
         //    score += sub_residue(group[k][i], '-');
         // }
-        score += num_gaps * sub_residue(group[k][i], '-', params);
+        score += num_gaps * sub_residue(group[k].data[i], '-', params);
     }
 
     return -1;
@@ -54,23 +54,23 @@ int sub_score(seq_group_t& group1, seq_group_t& group2, int i, int j, align_para
     int score = 0;
 
     // Calculate score within group 1
-    for (int k = 0; k < group1.size() - 1; k++) {
-        for (int m = k + 1; m < group1.size(); m++) {
-            score += sub_residue(group1[k][i], group1[m][i], params);
+    for (size_t k = 0; k < group1.size() - 1; k++) {
+        for (size_t m = k + 1; m < group1.size(); m++) {
+            score += sub_residue(group1[k].data[i], group1[m].data[i], params);
         }
     }
 
     // Calculate score within group 2
-    for (int l = 0; l < group2.size() - 1; l++) {
-        for (int m = l + 1; m < group2.size(); m++) {
-            score += sub_residue(group2[l][j], group2[m][j], params);
+    for (size_t l = 0; l < group2.size() - 1; l++) {
+        for (size_t m = l + 1; m < group2.size(); m++) {
+            score += sub_residue(group2[l].data[j], group2[m].data[j], params);
         }
     }
 
     // Calculate score between groups
-    for(int k = 0; k < group1.size(); k++){
-        for(int l = 0; l < group2.size(); l++){
-            score += sub_residue(group1[k][i], group2[l][j], params);
+    for(size_t k = 0; k < group1.size(); k++){
+        for(size_t l = 0; l < group2.size(); l++){
+            score += sub_residue(group1[k].data[i], group2[l].data[j], params);
         }
     }
 
@@ -180,8 +180,8 @@ void backward_pass(matrix_t& backtrack, gap_pos_t& gap_pos){
 
 int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& params, gap_pos_t& gap_pos) {
     // Initialize matrices
-    int num_rows = group1[0].length() + 1;
-    int num_cols = group2[0].length() + 1;
+    int num_rows = group1[0].data.length() + 1;
+    int num_cols = group2[0].data.length() + 1;
 
     matrix_t score{};
     matrix_t backtrack{};
@@ -194,7 +194,47 @@ int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& param
     return alnmt_score;
 }
 
-void update_alnmt(seq_group_t& alnmt, gap_pos_t& gap_pos) {
-    // TODO implement
-    return;
+seq_group_t update_alnmt(seq_group_t& group1, seq_group_t& group2, gap_pos_t& gap_pos) {
+    int num_seqs = group1.size() + group2.size();
+
+    // Initialize new alignment
+    seq_group_t new_alnmt{};
+    for (int i = 0; i < num_seqs; i++) {
+        seq_t seq_i;
+        seq_i.id = i;
+        seq_i.data = "";
+        new_alnmt.push_back(seq_i);
+    }
+
+    // Build new alignment
+    int group1_pos = 0;
+    int group2_pos = 0;
+    for (size_t i = 0; i < gap_pos.size(); i++) {
+        bool group1_gap = gap_pos[i].group1_gap;
+        bool group2_gap = gap_pos[i].group2_gap;
+
+        if (group1_gap) {
+            for (seq_t& group1_seq : group1)
+                new_alnmt[group1_seq.id].data += '-';
+        } else {
+            for (seq_t& group1_seq : group1) {
+                char residue = group1_seq.data[group1_pos];
+                new_alnmt[group1_seq.id].data += residue;
+            }
+            group1_pos++;
+        }
+
+        if (group2_gap) {
+            for (seq_t& group2_seq : group2)
+                new_alnmt[group2_seq.id].data += '-';
+        } else {
+            for (seq_t& group2_seq : group2) {
+                char residue = group2_seq.data[group2_pos];
+                new_alnmt[group2_seq.id].data += residue;
+            }
+            group2_pos++;
+        }
+    }
+
+    return new_alnmt;
 }

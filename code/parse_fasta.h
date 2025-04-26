@@ -10,7 +10,7 @@
 #include <vector>
 
 typedef struct fasta_seq {
-    std::string id;
+    std::string ident;
     std::string desc;
     std::string seq;
 } fasta_seq_t;
