@@ -9,6 +9,8 @@
 #include "align.h"
 #include "bm_utils.h"
 
+#include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits.h>
@@ -54,6 +56,8 @@ int main(int argc, char *argv[]) {
         print_fasta_seq(fasta_seq);
     }
     */
+
+    const auto start_time = std::chrono::steady_clock::now();
 
     /* --- Berger-Munson algorithm --- */
 
@@ -123,11 +127,18 @@ int main(int argc, char *argv[]) {
         glbl_idx++;
     }
 
+    const auto end_time = std::chrono::steady_clock::now();
+    const double runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+
     std::cout << "Ran for " << glbl_idx << " iterations.\n";
+    std::cout << "Runtime (sec): " << runtime << "\n";
     std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
-    std::cout << "Final alignment (score = " << best_score << "):\n";
+
+    std::ofstream fout(output_filename);
+
+    fout << "Final alignment (score = " << best_score << "):\n";
     for (seq_t seq : cur_alnmt) {
-        std::cout << "seq " << std::setw(3) << seq.id << ": ";
-        std::cout << seq.data << "\n";
+        fout << "seq " << std::setw(3) << seq.id << ": ";
+        fout << seq.data << "\n";
     }
 }
