@@ -15,7 +15,7 @@ int sub_residue(char res1, char res2, align_params_t& params) {
         return params.match_reward;
     } else if (res1 == '-' || res2 == '-') {
         return params.gap_penalty;
-    } else {
+    }  else {
         return params.sub_penalty;
     }
 }
@@ -41,12 +41,12 @@ int gap_score(int num_gaps, seq_group_t& group, int i, align_params_t& params) {
     // Calcualte score between gaps and group
     for (size_t k = 0; k < group.size(); k++) {
         // for (size_t l = 0; l < num_gaps; l++) {
-        //    score += sub_residue(group[k][i], '-');
+        //    score += sub_residue(group[k].data[i], '-');
         // }
         score += num_gaps * sub_residue(group[k].data[i], '-', params);
     }
 
-    return -1;
+    return score;
 }
 
 // Score calculation between two sequence groups.
@@ -96,14 +96,16 @@ int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t& param
     int num_rows = score.size();
     int num_cols = score[0].size();
 
+    score[0][0] = 0;
+
     // Initialize first row and column with gap penalties
     for (int i = 1; i < num_rows; i++) {
-        score[i][0] = i * params.gap_penalty * group2.size();
+        score[i][0] = score[i-1][0] + gap_score(group2.size(), group1, i-1, params);
         backtrack[i][0] = 1; // Vertical movement
     }
 
     for (int j = 1; j < num_cols; j++) {
-        score[0][j] = j * params.gap_penalty * group1.size();
+        score[0][j] = score[0][j-1] + gap_score(group1.size(), group2, j-1, params);
         backtrack[0][j] = 0; // Horizontal movement
     }
 
@@ -111,8 +113,8 @@ int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t& param
     for (int i = 1; i < num_rows; i++) {
         for (int j = 1; j < num_cols; j++) {
             // Calculate scores for three possible moves
-            int horizontal = score[i][j-1] + gap_score(group1.size(), group2, j, params);  // Gap in group1
-            int vertical = score[i-1][j] + gap_score(group2.size(), group1, i, params);    // Gap in group2
+            int horizontal = score[i][j-1] + gap_score(group1.size(), group2, j-1, params);  // Gap in group1
+            int vertical = score[i-1][j] + gap_score(group2.size(), group1, i-1, params);    // Gap in group2
             int diagonal = score[i-1][j-1] + sub_score(group1, group2, i-1, j-1, params);
 
             // Find the maximum score

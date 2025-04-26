@@ -9,6 +9,7 @@
 #include "align.h"
 #include "bm_utils.h"
 
+#include <iomanip>
 #include <iostream>
 #include <limits.h>
 #include <string>
@@ -48,19 +49,23 @@ int main(int argc, char *argv[]) {
     std::cout << "Input file: " << input_filename << "\n";
     std::vector<fasta_seq_t> fasta_seqs = parse_fasta(input_filename); // TODO use a struct for seqs to maintain id & desc
 
+    /* TODO remove debug prints
     for (fasta_seq_t fasta_seq : fasta_seqs) {
         print_fasta_seq(fasta_seq);
     }
+    */
 
     /* --- Berger-Munson algorithm --- */
 
     // construct naiive alignment (add gaps until all same length)
     seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
+    /* TODO remove debug prints
     std::cout << "Naiive alignment:\n";
     for (seq_t seq : cur_alnmt) {
         std::cout << seq.data << "\n";
     }
     std::cout << "\n";
+    */
 
     // iteratively improve alignment
 
@@ -68,7 +73,7 @@ int main(int argc, char *argv[]) {
     // iterations
     int glbl_idx = 0;
     int best_score = INT_MIN;
-    while (glbl_idx < 10) {
+    while (glbl_idx < 4000) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
@@ -77,6 +82,7 @@ int main(int argc, char *argv[]) {
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
 
+        /* TODO remove debug prints
         std::cout << "===== glbl_indx: " << glbl_idx << " =====\n";
         std::cout << "Group 1: \n";
         for (seq_t group1_seq: group1) {
@@ -89,6 +95,7 @@ int main(int argc, char *argv[]) {
             std::cout << group2_seq.data << "\n";
         }
         std::cout << "\n";
+        */
 
         gap_pos_t gap_pos{};
         align_params_t params{};
@@ -99,9 +106,16 @@ int main(int argc, char *argv[]) {
         int cur_score = align_groups(group1, group2,  params, gap_pos);
 
         if (cur_score > best_score) {
+            best_score = cur_score;
             cur_alnmt = update_alnmt(group1, group2, gap_pos);
         }
 
         glbl_idx++;
+    }
+
+    std::cout << "Final alignment (score = " << best_score << "):\n";
+    for (seq_t seq : cur_alnmt) {
+        std::cout << "seq " << std::setw(3) << seq.id << " :";
+        std::cout << seq.data << "\n";
     }
 }
