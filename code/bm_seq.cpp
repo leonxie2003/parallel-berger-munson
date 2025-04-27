@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
     std::string accept_reject_chain = "";
 
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
+    // while (glbl_idx < 1) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
