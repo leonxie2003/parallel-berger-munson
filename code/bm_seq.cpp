@@ -9,6 +9,8 @@
 #include "align.h"
 #include "bm_utils.h"
 
+#include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits.h>
@@ -55,6 +57,8 @@ int main(int argc, char *argv[]) {
     }
     */
 
+    const auto start_time = std::chrono::steady_clock::now();
+
     /* --- Berger-Munson algorithm --- */
 
     // construct naiive alignment (add gaps until all same length)
@@ -73,7 +77,13 @@ int main(int argc, char *argv[]) {
     // iterations
     int glbl_idx = 0;
     int best_score = INT_MIN;
-    while (glbl_idx < 4000) {
+    int best_glbl_idx = -1;
+    int num_seqs = fasta_seqs.size();
+    int num_partns = num_seqs + (num_seqs * (num_seqs - 1)) / 2;
+
+    std::string accept_reject_chain = "";
+
+    while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
@@ -107,15 +117,28 @@ int main(int argc, char *argv[]) {
 
         if (cur_score > best_score) {
             best_score = cur_score;
+            best_glbl_idx = glbl_idx;
             cur_alnmt = update_alnmt(group1, group2, gap_pos);
+            accept_reject_chain += 'A';
+        } else {
+            accept_reject_chain += 'R';
         }
 
         glbl_idx++;
     }
 
-    std::cout << "Final alignment (score = " << best_score << "):\n";
+    const auto end_time = std::chrono::steady_clock::now();
+    const double runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+
+    std::cout << "Ran for " << glbl_idx << " iterations.\n";
+    std::cout << "Runtime (sec): " << runtime << "\n";
+    std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
+
+    std::ofstream fout(output_filename);
+
+    fout << "Final alignment (score = " << best_score << "):\n";
     for (seq_t seq : cur_alnmt) {
-        std::cout << "seq " << std::setw(3) << seq.id << " :";
-        std::cout << seq.data << "\n";
+        fout << "seq " << std::setw(3) << seq.id << ": ";
+        fout << seq.data << "\n";
     }
 }
