@@ -56,5 +56,6 @@ void print_fasta_seq(fasta_seq_t seq) {
     std::cout << "FASTA sequence ID: " << seq.ident << "\n";
     std::cout << "Description: " << seq.desc << "\n";
     std::cout << "Sequence: " << seq.seq << "\n";
+    std::cout << "Length: " << seq.seq.size() << "\n";
     std::cout << "\n";
 }
