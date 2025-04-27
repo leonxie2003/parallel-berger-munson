@@ -19,10 +19,8 @@
 
 #include <unistd.h>
 
-#define ACCEPT true
-#define REJECT false
-
 int main(int argc, char *argv[]) {
+    const auto start_time = std::chrono::steady_clock::now();
     /* --- parse cmd line args --- */
     std::string input_filename;
     std::string output_filename;
@@ -57,7 +55,6 @@ int main(int argc, char *argv[]) {
     }
     */
 
-    const auto start_time = std::chrono::steady_clock::now();
 
     /* --- Berger-Munson algorithm --- */
 
@@ -75,6 +72,11 @@ int main(int argc, char *argv[]) {
 
     // TODO Replace with "q reject in a row", right now is just constant num of
     // iterations
+    align_params_t params{};
+    params.match_reward = 1;
+    params.gap_penalty = -1;
+    params.sub_penalty = 0;
+
     int glbl_idx = 0;
     int best_score = INT_MIN;
     int best_glbl_idx = -1;
@@ -108,12 +110,7 @@ int main(int argc, char *argv[]) {
         */
 
         gap_pos_t gap_pos{};
-        align_params_t params{};
-        params.match_reward = 1;
-        params.gap_penalty = -1;
-        params.sub_penalty = 0;
-
-        int cur_score = align_groups(group1, group2,  params, gap_pos);
+        int cur_score = align_groups(group1, group2, params, gap_pos);
 
         if (cur_score > best_score) {
             best_score = cur_score;
