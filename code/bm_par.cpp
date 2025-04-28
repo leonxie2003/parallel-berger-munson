@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
             case 'r':
                 if (optarg[0] == 'R')
                     random_mode = DEVICERANDOM;
-                else if (optarg[0] == 'W')
+                else if (optarg[0] == 'P')
                     random_mode = PSEUDORANDOM;
                 break;
         default:

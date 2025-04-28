@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
                     random_mode = PSEUDORANDOM;
                 break;
         default:
-            std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename\n";
+            std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename -r random_mode\n";
             exit(EXIT_FAILURE);
         }
     }
 
     if (empty(input_filename) || empty(output_filename)) {
-        std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename\n";
+        std::cerr << "Usage: " << argv[0] << " -i input_filename -o output_filename -r random_mode\n";
         exit(EXIT_FAILURE);
     }
 

@@ -2,6 +2,7 @@
 #include "align.h"
 #include "parse_fasta.h"
 
+#include <cassert>
 #include <string>
 #include <vector>
 #include <random>
@@ -31,6 +32,8 @@ seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
 }
 
 void select_partn(seq_group_t seqs, int glbl_idx, int random_mode, seq_group_t& group1, seq_group_t& group2) {
+    assert(random_mode == DEVICERANDOM || random_mode == PSEUDORANDOM);
+
     int num_seqs = seqs.size();
 
     std::mt19937 gen{};
