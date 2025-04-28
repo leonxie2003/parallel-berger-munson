@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
     // TODO Replace with "q reject in a row", right now is just constant num of
     // iterations
     align_params_t params{};
-    params.match_reward = 1;
-    params.gap_penalty = -1;
-    params.sub_penalty = 0;
+    // params.match_reward = 1;
+    // params.gap_penalty = -1;
+    // params.sub_penalty = 0;
 
     int glbl_idx = 0;
     int best_score = INT_MIN;

@@ -19,10 +19,14 @@ typedef std::vector<seq_t> seq_group_t;
 typedef std::vector<std::vector<int>> matrix_t;
 
 typedef struct align_params {
-    int match_reward;
-    int gap_penalty;
-    int sub_penalty; // TODO replace with subst matrix
+    int match_reward = 1;
+    int gap_penalty = -1;
+    int sub_penalty = 0; // TODO replace with subst matrix
+
+    
 } align_params_t;
+
+
 
 /**
  * Data structure to represent gap positions. After alignment, each position
