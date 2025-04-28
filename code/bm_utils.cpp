@@ -35,7 +35,9 @@ void select_partn(seq_group_t seqs, int glbl_idx, seq_group_t& group1, seq_group
     int num_seqs = seqs.size();
 
     std::mt19937 gen{};
-    gen.seed(glbl_idx); // TODO seeded vs "true" randomness...
+    gen.seed(glbl_idx);
+
+    // Uncomment these lines to use "true" randomness instead of seeded randomness
     // std::random_device rd;
     // gen.seed(rd());
 
