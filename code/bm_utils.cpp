@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <random>
-#include <iostream> // TODO remove (debug)
 
 seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
     seq_group_t naiive_alnmt{};
@@ -31,15 +30,16 @@ seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs) {
     return naiive_alnmt;
 }
 
-void select_partn(seq_group_t seqs, int glbl_idx, seq_group_t& group1, seq_group_t& group2) {
+void select_partn(seq_group_t seqs, int glbl_idx, int random_mode, seq_group_t& group1, seq_group_t& group2) {
     int num_seqs = seqs.size();
 
     std::mt19937 gen{};
-    gen.seed(glbl_idx);
-
-    // Uncomment these lines to use "true" randomness instead of seeded randomness
-    // std::random_device rd;
-    // gen.seed(rd());
+    if (random_mode == DEVICERANDOM) {
+        std::random_device rd;
+        gen.seed(rd());
+    } else if (random_mode == PSEUDORANDOM) {
+        gen.seed(glbl_idx);
+    }
 
     int num_partns = num_seqs + (num_seqs * (num_seqs - 1)) / 2;
     std::uniform_int_distribution<> distr(0, num_partns - 1);
