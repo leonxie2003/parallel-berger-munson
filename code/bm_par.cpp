@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
             cur_alnmt = update_alnmt(group1, group2, gap_pos);
 
             // Extend the accept-reject chain
-            for (int i = 0; i < accepted_pid - 1; i++)
+            for (int i = 0; i < accepted_pid; i++)
                 accept_reject_chain += 'R';
             accept_reject_chain += 'A';
 
