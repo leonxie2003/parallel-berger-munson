@@ -23,14 +23,15 @@
 
 int main(int argc, char *argv[]) {
     const auto start_time = std::chrono::steady_clock::now();
+
+    // Initialize MPI
     int pid;
     int nproc;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &pid);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-    /* --- parse cmd line args --- */
-
+    // Parse cmd line args
     std::string input_filename;
     std::string output_filename;
 
@@ -54,81 +55,50 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /* --- parse FASTA file --- */
+    // P0 parses and serializes FASTA file
     std::vector<fasta_seq_t> fasta_seqs{};
     size_t num_bytes = -1;
     char *fasta_seqs_buf = NULL;
     if (pid == 0) {
         std::cout << "Input file: " << input_filename << "\n";
-        fasta_seqs = parse_fasta(input_filename); // TODO use a struct for seqs to maintain id & desc
+        fasta_seqs = parse_fasta(input_filename);
         fasta_seqs_buf = serialize_fasta_seqs(fasta_seqs, num_bytes);
     }
 
+    // P0 broadcasts FASTA input to other procs
     MPI_Bcast(&num_bytes, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     if (pid > 0)
         fasta_seqs_buf = (char *) malloc(num_bytes);
-
     MPI_Bcast(fasta_seqs_buf, num_bytes, MPI_CHAR, 0, MPI_COMM_WORLD);
-
     if (pid > 0)
         fasta_seqs = deserialize_fasta_seqs(fasta_seqs_buf, num_bytes);
 
-    seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
-
-    // iterate sequentially until first reject
+    // Initialize program state
     align_params_t params{};
-    params.match_reward = 1;
-    params.gap_penalty = -1;
-    params.sub_penalty = 0;
 
-    int glbl_idx = 0;
+    int glbl_idx = 0; // Berger-Munson iteration number
+    int seq_step = 0; // Sequential step count
+
+    seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
     int best_score = INT_MIN;
     int best_glbl_idx = -1;
+
     int num_seqs = fasta_seqs.size();
     int num_partns = num_seqs + (num_seqs * (num_seqs - 1)) / 2;
 
+    int flag;
     std::string accept_reject_chain = "";
-    int flag = ACCEPT;
-    do {
-        // partition into two group
-        seq_group_t group1{};
-        seq_group_t group2{};
-        select_partn(cur_alnmt, glbl_idx, group1, group2);
 
-        remove_glbl_gaps(group1);
-        remove_glbl_gaps(group2);
-
-        gap_pos_t gap_pos{};
-        int cur_score = align_groups(group1, group2, params, gap_pos);
-
-        if (cur_score > best_score) {
-            best_score = cur_score;
-            best_glbl_idx = glbl_idx;
-            cur_alnmt = update_alnmt(group1, group2, gap_pos);
-            accept_reject_chain += 'A';
-            flag = ACCEPT;
-        } else {
-            accept_reject_chain = 'R';
-            flag = REJECT;
-        }
-
-        glbl_idx++;
-    } while (flag == ACCEPT);
-
-    // TODO HAVE P0 do the sequential part, then broadcast to the rest
-    // ERROR WITH TRUE PARALLEL: diff procs are getting diff glbl indexes n shit
-
-    // begin speculation
+    // Register custom reduction op with MPI
     MPI_Op MPI_accept_op;
     MPI_Datatype MPI_pid_flag_t;
     MPI_Type_contiguous(2, MPI_INT, &MPI_pid_flag_t);
     MPI_Type_commit(&MPI_pid_flag_t);
-
     MPI_Op_create(accept_op, true, &MPI_accept_op);
 
+    // Begin speculative computation
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
-        MPI_Barrier(MPI_COMM_WORLD);
-        // std::cout << "P" << pid << ": glbl_idx=" << glbl_idx << "\n";
+        // Partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
         select_partn(cur_alnmt, glbl_idx + pid, group1, group2);
@@ -136,6 +106,7 @@ int main(int argc, char *argv[]) {
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
 
+        // Compute alignment between two groups
         gap_pos_t gap_pos{};
         int cur_score = align_groups(group1, group2, params, gap_pos);
         if (cur_score > best_score)
@@ -143,23 +114,22 @@ int main(int argc, char *argv[]) {
         else
             flag = REJECT;
 
-        // Reduce with other procs
+        // Check if any processors accepted, and take the one with lowest pid
         pid_flag_t send_pid_flag{};
         send_pid_flag.pid = pid;
         send_pid_flag.flag = flag;
         pid_flag_t recv_pid_flag{};
-
-        // Implicit barrier here?
         MPI_Allreduce(&send_pid_flag, &recv_pid_flag, 1, MPI_pid_flag_t, MPI_accept_op, MPI_COMM_WORLD);
 
-
-        // std::cout << "P" << pid << ": reduction (glbl_idx=" << glbl_idx << ") " << "a_pid=" << recv_pid_flag.pid << ", flag=" << recv_pid_flag.flag << "\n";
-        MPI_Barrier(MPI_COMM_WORLD);
-
         if (recv_pid_flag.flag == ACCEPT) {
-            // std::cout << "P" << pid << ": some proc accepted\n";
             int accepted_pid = recv_pid_flag.pid;
-            // copy from accepted pid
+
+            // Broadcast data from accepted processor to others
+            // index 0 --> size of group1 of partition (1 or 2)
+            // index 1 --> first seq id of group1
+            // index 2 --> second seq id of group1 (if there is one)
+            // index 3 --> score of resulting alignment
+            // index 4 --> length of resulting alignment
             int accepted_data[5];
             if (pid == accepted_pid) {
                 accepted_data[0] = static_cast<int>(group1.size());
@@ -174,6 +144,7 @@ int main(int argc, char *argv[]) {
             MPI_Bcast(accepted_data, 5, MPI_INT, accepted_pid, MPI_COMM_WORLD);
 
             if (pid != accepted_pid) {
+                // Reconstruct partition of accepted processor
                 group1.clear();
                 group2.clear();
 
@@ -196,32 +167,24 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-
                 remove_glbl_gaps(group1);
                 remove_glbl_gaps(group2);
             }
 
-            // Broadcast gap_pos
-            int gap_pos_len = -1; // NOT ALL SAME SIZE
-            if (pid == accepted_pid)
-                gap_pos_len = gap_pos.size();
-
-            MPI_Bcast(&gap_pos_len, 1, MPI_INT, accepted_pid, MPI_COMM_WORLD);
-
+            // Broadcast gap positions from accepted processor
+            int gap_pos_len = accepted_data[4];
             char *gap_pos_bytes = (char *) malloc(gap_pos_len * 2);
 
+            // Accepted processor serializes and broadcasts gap positions
             if (pid == accepted_pid) {
                 for (int i = 0; i < gap_pos_len; i++) {
                     gap_pos_bytes[2*i] = 1 ? gap_pos[i].group1_gap : 0;
                     gap_pos_bytes[2*i+1] = 1 ? gap_pos[i].group2_gap : 0;
                 }
             }
-
-            // std::cout << "P" << pid << ": " << "(ap=" << accepted_pid << ") about to bcast gap pos\n";
             MPI_Bcast(gap_pos_bytes, gap_pos_len * 2, MPI_CHAR, accepted_pid, MPI_COMM_WORLD);
-            // MPI_Barrier(MPI_COMM_WORLD);
-            // std::cout << "P" << pid << ": finished bcast gap pos\n";
 
+            // Other processors deserialize gap positions
             if (pid != accepted_pid) {
                 gap_pos.clear();
                 for (int i = 0; i < gap_pos_len; i++) {
@@ -232,23 +195,26 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            // TODO update best_score, update best_glbl_idx, update cur_alnmt
+            // Update program state for next iteration
             int accepted_score = accepted_data[3];
             best_score = accepted_score;
             best_glbl_idx = glbl_idx + accepted_pid;
             cur_alnmt = update_alnmt(group1, group2, gap_pos);
 
-            // TODO update accept-reject chain...
-            for (int i = 0; i < accepted_pid - 1; i++)
+            // Extend the accept-reject chain
+            for (int i = 0; i < accepted_pid; i++)
                 accept_reject_chain += 'R';
             accept_reject_chain += 'A';
 
             glbl_idx += accepted_pid + 1;
         } else if (recv_pid_flag.flag == REJECT) {
+            // All processors have rejected
             for (int i = 0; i < nproc; i++)
                 accept_reject_chain += 'R';
             glbl_idx += nproc;
         }
+
+        seq_step++;
     }
 
     const auto end_time = std::chrono::steady_clock::now();
@@ -256,12 +222,16 @@ int main(int argc, char *argv[]) {
 
     if (pid == 0) {
         std::cout << "Ran for " << glbl_idx << " iterations.\n";
+        std::cout << "Took " << seq_step << " sequential steps.\n";
         std::cout << "Runtime (sec): " << runtime << "\n";
+        std::cout << "Alignment score: " << best_score << "\n";
         std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
 
         std::ofstream fout(output_filename);
 
         fout << "Final alignment (score = " << best_score << "):\n";
+        fout << "Accepts and rejects: " << accept_reject_chain << "\n";
+        fout << "\n\n";
         for (seq_t seq : cur_alnmt) {
             fout << "seq " << std::setw(3) << seq.id << ": ";
             fout << seq.data << "\n";

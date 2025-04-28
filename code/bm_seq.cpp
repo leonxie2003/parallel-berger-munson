@@ -21,7 +21,8 @@
 
 int main(int argc, char *argv[]) {
     const auto start_time = std::chrono::steady_clock::now();
-    /* --- parse cmd line args --- */
+
+    // Parse cmd line args
     std::string input_filename;
     std::string output_filename;
 
@@ -45,49 +46,26 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /* --- parse FASTA file --- */
+    // Parse FASTA file
     std::cout << "Input file: " << input_filename << "\n";
-    std::vector<fasta_seq_t> fasta_seqs = parse_fasta(input_filename); // TODO use a struct for seqs to maintain id & desc
+    std::vector<fasta_seq_t> fasta_seqs = parse_fasta(input_filename);
 
-    /* TODO remove debug prints
-    for (fasta_seq_t fasta_seq : fasta_seqs) {
-        print_fasta_seq(fasta_seq);
-    }
-    */
-
-
-    /* --- Berger-Munson algorithm --- */
-
-    // construct naiive alignment (add gaps until all same length)
-    seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
-    /* TODO remove debug prints
-    std::cout << "Naiive alignment:\n";
-    for (seq_t seq : cur_alnmt) {
-        std::cout << seq.data << "\n";
-    }
-    std::cout << "\n";
-    */
-
-    // iteratively improve alignment
-
-    // TODO Replace with "q reject in a row", right now is just constant num of
-    // iterations
+    // Initialize program state
     align_params_t params{};
-    // params.match_reward = 1;
-    // params.gap_penalty = -1;
-    // params.sub_penalty = 0;
 
-    int glbl_idx = 0;
+    int glbl_idx = 0; // Berger-Munson iteration number
+
+    seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
     int best_score = INT_MIN;
     int best_glbl_idx = -1;
+
     int num_seqs = fasta_seqs.size();
     int num_partns = num_seqs + (num_seqs * (num_seqs - 1)) / 2;
 
     std::string accept_reject_chain = "";
 
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
-    // while (glbl_idx < 1) {
-        // partition into two groups
+        // Partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
         select_partn(cur_alnmt, glbl_idx, group1, group2);
@@ -95,25 +73,12 @@ int main(int argc, char *argv[]) {
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
 
-        /* TODO remove debug prints
-        std::cout << "===== glbl_indx: " << glbl_idx << " =====\n";
-        std::cout << "Group 1: \n";
-        for (seq_t group1_seq: group1) {
-            std::cout << group1_seq.data << "\n";
-        }
-        std::cout << "\n";
-
-        std::cout << "Group 2: \n";
-        for (seq_t group2_seq: group2) {
-            std::cout << group2_seq.data << "\n";
-        }
-        std::cout << "\n";
-        */
-
+        // Compute alignment between two groups
         gap_pos_t gap_pos{};
         int cur_score = align_groups(group1, group2, params, gap_pos);
 
         if (cur_score > best_score) {
+            // Update program state
             best_score = cur_score;
             best_glbl_idx = glbl_idx;
             cur_alnmt = update_alnmt(group1, group2, gap_pos);
@@ -130,11 +95,14 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Ran for " << glbl_idx << " iterations.\n";
     std::cout << "Runtime (sec): " << runtime << "\n";
+    std::cout << "Alignment score: " << best_score << "\n";
     std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
 
     std::ofstream fout(output_filename);
 
     fout << "Final alignment (score = " << best_score << "):\n";
+    fout << "Accepts and rejects: " << accept_reject_chain << "\n";
+    fout << "\n\n";
     for (seq_t seq : cur_alnmt) {
         fout << "seq " << std::setw(3) << seq.id << ": ";
         fout << seq.data << "\n";
