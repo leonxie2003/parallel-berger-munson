@@ -6,6 +6,9 @@
 
 #include <vector>
 
+#define ACCEPT 1
+#define REJECT 2
+
 seq_group_t naiive_alnmt(std::vector<fasta_seq_t> fasta_seqs);
 
 void select_partn(seq_group_t seqs, int glbl_idx, seq_group_t& group1, seq_group_t& group2);

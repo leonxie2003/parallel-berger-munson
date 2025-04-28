@@ -1,15 +1,20 @@
 #include "bm_comm.h"
 
 #include "align.h"
+#include "bm_par.h"
+#include "bm_utils.h"
 #include "parse_fasta.h"
 
+#include <algorithm>
 #include <cstring>
 #include <cassert>
 #include <iostream>
 
-#define FASTA_IDENT 0
-#define FASTA_DESC 1
-#define FASTA_SEQ 2
+#include <mpi.h>
+
+#define FASTA_IDENT 1
+#define FASTA_DESC 2
+#define FASTA_SEQ 3
 
 char *serialize_fasta_seqs(std::vector<fasta_seq_t>& fasta_seqs, size_t& num_bytes) {
     num_bytes = 0;
@@ -62,4 +67,28 @@ std::vector<fasta_seq_t> deserialize_fasta_seqs(char *bytes, size_t num_bytes) {
     }
 
     return fasta_seqs;
+}
+
+void accept_op(void *in, void *inout, int *len, MPI_Datatype *dptr) {
+    for (int i = 0; i < *len; i++) {
+        pid_flag_t left = ((pid_flag_t *) in)[i];
+        pid_flag_t right = ((pid_flag_t *) inout)[i];
+
+        pid_flag_t result;
+        if (left.flag == ACCEPT && right.flag == ACCEPT) {
+            result.pid = std::min(left.pid, right.pid);
+            result.flag = ACCEPT;
+        } else if (left.flag == ACCEPT) {
+            result.pid = left.pid;
+            result.flag = ACCEPT;
+        } else if (right.flag == ACCEPT) {
+            result.pid = right.pid;
+            result.flag = ACCEPT;
+        } else {
+            result.pid = -1;
+            result.flag = REJECT;
+        }
+
+        ((pid_flag *) inout)[i] = result;
+    }
 }
