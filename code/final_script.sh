@@ -22,7 +22,7 @@ for file in "${LONGFEW[@]}"; do
 
     # Paths
     input_path="../data/bb3_release/${file}"
-    output_path="../data/${base_filename}.out"
+    output_path="../data/output/${base_filename}.out"
 
     # Run sequential version and save output
     echo "Running bm_seq on ${file}"
