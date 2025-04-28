@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
     MPI_Op_create(accept_op, true, &MPI_accept_op);
 
     // Begin speculative computation
+    const auto loop_start = std::chrono::steady_clock::now();
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
         // Partition into two groups
         seq_group_t group1{};
@@ -223,6 +224,9 @@ int main(int argc, char *argv[]) {
 
         seq_step++;
     }
+    const auto loop_end = std::chrono::steady_clock::now();
+    const double loop_runtime = std::chrono::duration_cast<std::chrono::duration<double>>(loop_end - loop_start).count();
+    const double avg_iter_runtime = loop_runtime / static_cast<double>(seq_step);
 
     const auto end_time = std::chrono::steady_clock::now();
     const double runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
@@ -231,6 +235,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Ran for " << glbl_idx << " iterations.\n";
         std::cout << "Took " << seq_step << " sequential steps.\n";
         std::cout << "Runtime (sec): " << runtime << "\n";
+        std::cout << "Runtime per iteration (sec): " << avg_iter_runtime << "\n";
         std::cout << "Alignment score: " << best_score << "\n";
         std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
 
