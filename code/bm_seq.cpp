@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
     // TODO Replace with "q reject in a row", right now is just constant num of
     // iterations
     align_params_t params{};
-    params.match_reward = 1;
-    params.gap_penalty = -1;
-    params.sub_penalty = 0;
+    // params.match_reward = 1;
+    // params.gap_penalty = -1;
+    // params.sub_penalty = 0;
 
     int glbl_idx = 0;
     int best_score = INT_MIN;
@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
     std::string accept_reject_chain = "";
 
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
+    // while (glbl_idx < 1) {
         // partition into two groups
         seq_group_t group1{};
         seq_group_t group2{};
