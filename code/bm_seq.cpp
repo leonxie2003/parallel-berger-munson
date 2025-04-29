@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    const auto start_time = std::chrono::steady_clock::now();
+    const auto start_time = CLOCK_NOW;
 
     // Parse cmd line args
     std::string input_filename;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
     std::string accept_reject_chain = "";
 
-    const auto loop_start = std::chrono::steady_clock::now();
+    const auto loop_start = CLOCK_NOW;
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
         // Partition into two groups
         seq_group_t group1{};
@@ -97,12 +97,12 @@ int main(int argc, char *argv[]) {
 
         glbl_idx++;
     }
-    const auto loop_end = std::chrono::steady_clock::now();
-    const double loop_runtime = std::chrono::duration_cast<std::chrono::duration<double>>(loop_end - loop_start).count();
+    const auto loop_end = CLOCK_NOW;
+    const double loop_runtime = TIME_SEC(loop_start, loop_end);
     const double avg_iter_runtime = loop_runtime / static_cast<double>(glbl_idx);
 
-    const auto end_time = std::chrono::steady_clock::now();
-    const double runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+    const auto end_time = CLOCK_NOW;
+    const double runtime = TIME_SEC(start_time, end_time);
 
     std::cout << "Ran for " << glbl_idx << " iterations.\n";
     std::cout << "Runtime (sec): " << runtime << "\n";
@@ -112,8 +112,13 @@ int main(int argc, char *argv[]) {
 
     std::ofstream fout(output_filename);
 
-    fout << "Final alignment (score = " << best_score << "):\n";
+    fout << "Ran for " << glbl_idx << " iterations.\n";
+    fout << "Runtime (sec): " << runtime << "\n";
+    fout << "Runtime per iteration (sec): " << avg_iter_runtime << "\n";
+    fout << "Alignment score: " << best_score << "\n";
     fout << "Accepts and rejects: " << accept_reject_chain << "\n";
+
+    fout << "Final alignment (score = " << best_score << "):\n";
     fout << "\n\n";
     for (seq_t seq : cur_alnmt) {
         fout << "seq " << std::setw(3) << seq.id << ": ";

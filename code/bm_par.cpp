@@ -22,7 +22,7 @@
 #include <mpi.h>
 
 int main(int argc, char *argv[]) {
-    const auto start_time = std::chrono::steady_clock::now();
+    const auto start_time = CLOCK_NOW;
 
     // Initialize MPI
     int pid;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     align_params_t params{};
 
     int glbl_idx = 0; // Berger-Munson iteration number
-    int seq_step = 0; // Sequential step count
+    int par_step = 0; // Sequential step count
 
     seq_group_t cur_alnmt = naiive_alnmt(fasta_seqs);
     int best_score = INT_MIN;
@@ -104,7 +104,10 @@ int main(int argc, char *argv[]) {
     MPI_Op_create(accept_op, true, &MPI_accept_op);
 
     // Begin speculative computation
-    const auto loop_start = std::chrono::steady_clock::now();
+    const auto loop_start = CLOCK_NOW;
+    double time_in_bcast_1 = 0.0;
+    double time_in_bcast_2 = 0.0;
+    double time_in_allreduce = 0.0;
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
         // Partition into two groups
         seq_group_t group1{};
@@ -127,7 +130,10 @@ int main(int argc, char *argv[]) {
         send_pid_flag.pid = pid;
         send_pid_flag.flag = flag;
         pid_flag_t recv_pid_flag{};
+        const auto allreduce_start = CLOCK_NOW;
         MPI_Allreduce(&send_pid_flag, &recv_pid_flag, 1, MPI_pid_flag_t, MPI_accept_op, MPI_COMM_WORLD);
+        const auto allreduce_end = CLOCK_NOW;
+        time_in_allreduce += TIME_SEC(allreduce_start, allreduce_end);
 
         if (recv_pid_flag.flag == ACCEPT) {
             int accepted_pid = recv_pid_flag.pid;
@@ -149,7 +155,10 @@ int main(int argc, char *argv[]) {
                 accepted_data[3] = cur_score;
                 accepted_data[4] = static_cast<int>(gap_pos.size());
             }
+            const auto bcast_1_start = CLOCK_NOW;
             MPI_Bcast(accepted_data, 5, MPI_INT, accepted_pid, MPI_COMM_WORLD);
+            const auto bcast_1_end = CLOCK_NOW;
+            time_in_bcast_1 += TIME_SEC(bcast_1_start, bcast_1_end);
 
             if (pid != accepted_pid) {
                 // Reconstruct partition of accepted processor
@@ -190,7 +199,10 @@ int main(int argc, char *argv[]) {
                     gap_pos_bytes[2*i+1] = 1 ? gap_pos[i].group2_gap : 0;
                 }
             }
+            const auto bcast_2_start = CLOCK_NOW;
             MPI_Bcast(gap_pos_bytes, gap_pos_len * 2, MPI_CHAR, accepted_pid, MPI_COMM_WORLD);
+            const auto bcast_2_end = CLOCK_NOW;
+            time_in_bcast_2 += TIME_SEC(bcast_2_start, bcast_2_end);
 
             // Other processors deserialize gap positions
             if (pid != accepted_pid) {
@@ -222,27 +234,39 @@ int main(int argc, char *argv[]) {
             glbl_idx += nproc;
         }
 
-        seq_step++;
+        par_step++;
     }
-    const auto loop_end = std::chrono::steady_clock::now();
-    const double loop_runtime = std::chrono::duration_cast<std::chrono::duration<double>>(loop_end - loop_start).count();
-    const double avg_iter_runtime = loop_runtime / static_cast<double>(seq_step);
+    const auto loop_end = CLOCK_NOW;
+    const double loop_runtime = TIME_SEC(loop_start, loop_end);
+    const double avg_iter_runtime = loop_runtime / static_cast<double>(par_step);
 
-    const auto end_time = std::chrono::steady_clock::now();
-    const double runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+    const auto end_time = CLOCK_NOW;
+    const double runtime = TIME_SEC(start_time, end_time);
 
     if (pid == 0) {
         std::cout << "Ran for " << glbl_idx << " iterations.\n";
-        std::cout << "Took " << seq_step << " sequential steps.\n";
+        std::cout << "Took " << par_step << " parallel steps.\n";
         std::cout << "Runtime (sec): " << runtime << "\n";
         std::cout << "Runtime per iteration (sec): " << avg_iter_runtime << "\n";
+        std::cout << "Time in Bcast 1 (sec): " << time_in_bcast_1 << "\n";
+        std::cout << "Time in Bcast 2 (sec): " << time_in_bcast_2 << "\n";
+        std::cout << "Time in Allreduce (sec): " << time_in_allreduce << "\n";
         std::cout << "Alignment score: " << best_score << "\n";
         std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
 
         std::ofstream fout(output_filename);
 
-        fout << "Final alignment (score = " << best_score << "):\n";
+        fout << "Ran for " << glbl_idx << " iterations.\n";
+        fout << "Took " << par_step << " parallel steps.\n";
+        fout << "Runtime (sec): " << runtime << "\n";
+        fout << "Runtime per iteration (sec): " << avg_iter_runtime << "\n";
+        fout << "Time in Bcast 1 (sec): " << time_in_bcast_1 << "\n";
+        fout << "Time in Bcast 2 (sec): " << time_in_bcast_2 << "\n";
+        fout << "Time in Allreduce (sec): " << time_in_allreduce << "\n";
+        fout << "Alignment score: " << best_score << "\n";
         fout << "Accepts and rejects: " << accept_reject_chain << "\n";
+
+        fout << "Final alignment (score = " << best_score << "):\n";
         fout << "\n\n";
         for (seq_t seq : cur_alnmt) {
             fout << "seq " << std::setw(3) << seq.id << ": ";
