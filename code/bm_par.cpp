@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
     double time_in_bcast_1 = 0.0;
     double time_in_bcast_2 = 0.0;
     double time_in_allreduce = 0.0;
+    double time_in_par_alg_ovhd = 0.0;
     while (glbl_idx - (best_glbl_idx + 1) < num_partns) {
         // Partition into two groups
         seq_group_t group1{};
@@ -117,9 +118,17 @@ int main(int argc, char *argv[]) {
         remove_glbl_gaps(group1);
         remove_glbl_gaps(group2);
 
+        // Measurement for divergence
         // Compute alignment between two groups
         gap_pos_t gap_pos{};
+        // const auto alnmt_start = CLOCK_NOW;
         int cur_score = align_groups(group1, group2, params, gap_pos);
+        // const auto alnmt_end = CLOCK_NOW;
+        //double alnmt_time = TIME_SEC(alnmt_start, alnmt_end);
+        // if (par_step % 10 == 0) {
+        //    std::cout << "[Parallel step " << par_step << "] ";
+        //    std::cout << "P" << pid << ": time in alignment = " << alnmt_time << "\n";
+        // }
         if (cur_score > best_score)
             flag = ACCEPT;
         else
@@ -204,6 +213,7 @@ int main(int argc, char *argv[]) {
             const auto bcast_2_end = CLOCK_NOW;
             time_in_bcast_2 += TIME_SEC(bcast_2_start, bcast_2_end);
 
+            const auto par_alg_ovhd_start = CLOCK_NOW;
             // Other processors deserialize gap positions
             if (pid != accepted_pid) {
                 gap_pos.clear();
@@ -227,6 +237,8 @@ int main(int argc, char *argv[]) {
             accept_reject_chain += 'A';
 
             glbl_idx += accepted_pid + 1;
+            const auto par_alg_ovhd_end = CLOCK_NOW;
+            time_in_par_alg_ovhd += TIME_SEC(par_alg_ovhd_start, par_alg_ovhd_end);
         } else if (recv_pid_flag.flag == REJECT) {
             // All processors have rejected
             for (int i = 0; i < nproc; i++)
@@ -251,6 +263,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Time in Bcast 1 (sec): " << time_in_bcast_1 << "\n";
         std::cout << "Time in Bcast 2 (sec): " << time_in_bcast_2 << "\n";
         std::cout << "Time in Allreduce (sec): " << time_in_allreduce << "\n";
+        std::cout << "Time in par alg overhead (sec): " << time_in_par_alg_ovhd << "\n";
         std::cout << "Alignment score: " << best_score << "\n";
         std::cout << "Accepts and rejects: " << accept_reject_chain << "\n";
 
@@ -263,6 +276,7 @@ int main(int argc, char *argv[]) {
         fout << "Time in Bcast 1 (sec): " << time_in_bcast_1 << "\n";
         fout << "Time in Bcast 2 (sec): " << time_in_bcast_2 << "\n";
         fout << "Time in Allreduce (sec): " << time_in_allreduce << "\n";
+        fout << "Time in par alg overhead (sec): " << time_in_par_alg_ovhd << "\n";
         fout << "Alignment score: " << best_score << "\n";
         fout << "Accepts and rejects: " << accept_reject_chain << "\n";
 

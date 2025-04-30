@@ -1,3 +1,5 @@
 *.o
 bm_seq
 bm_par
+data/bb3_release/
+data/output/
