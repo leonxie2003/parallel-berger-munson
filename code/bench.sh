@@ -1,28 +1,17 @@
 #!/bin/bash
 
 INPUT_FILES=(
-    # few short
-    # "RV11/BB11013.tfa" # 5 x 115
-
-    # few long
-    # "RV12/BB12028.tfa" # 8 x 519
-    # "RV12/BB12007.tfa" # 8 x 1263
-    # "RV30/BB30027.tfa" # 20 x 239
-
-    # many short
-    # "RV30/BBS30009.tfa" # 38 x 74
-    # "RV20/BBS20030.tfa" # 47 x 97
-    # "RV20/BBS20032.tfa" # 61 x 116
-
-    # one that didn't scale well
-    "RV20/BB20007.tfa" # 23 x 515
+    "demo/few_long.tfa"
+    "demo/few_very_long.tfa"
 )
+
+mkdir "../data/output"
 
 for input_file in "${INPUT_FILES[@]}"; do
     echo "=========="
     base_filename=$(basename "$input_file" .tfa)
 
-    input_path="../data/bb3_release/${input_file}"
+    input_path="../data/${input_file}"
     output_path="../data/output/${base_filename}"
 
     echo "Running bm_seq on ${input_file}"
