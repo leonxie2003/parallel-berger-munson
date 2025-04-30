@@ -1,7 +1,6 @@
 #include "bm_comm.h"
 
 #include "align.h"
-#include "bm_par.h"
 #include "bm_utils.h"
 #include "parse_fasta.h"
 

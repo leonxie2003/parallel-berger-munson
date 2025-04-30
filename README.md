@@ -15,15 +15,16 @@ To build the project, run `make` from the `/code` directory.
 
 To run the sequential code,
 ```
-./bm_seq -i input_file -o output_file
+./bm_seq -i input_file -o output_file -r random_mode
 ```
 
 
 To run the parallel code,
 ```
-mpirun -np num_procs ./bm_par -i input_file -o output_file
+mpirun -np num_procs ./bm_par -i input_file -o output_file -r random_mode
 ```
 
+The `-r` flag allows for pseudorandomness, to facilitate benchmarking and debugging. To use pseudorandomness, pass `-r P`. To use "true" randomness, pass `-r R` (or omit the flag).
 
 # Documentation
 Run `make docs`. Results are in `/code/docs/`.

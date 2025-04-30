@@ -4,7 +4,6 @@
  * Leon Xie (leonx), Taekseung Kim (taekseuk)
  */
 
-#include "bm_seq.h"
 #include "parse_fasta.h"
 #include "align.h"
 #include "bm_utils.h"

@@ -8,6 +8,7 @@
 #define VERTICAL 1
 #define DIAGONAL 2
 
+// Substituion score for one residue against another.
 int sub_residue(char res1, char res2, align_params_t& params) {
     if (res1 == '-' && res2 == '-') {
         return 0;
@@ -20,7 +21,7 @@ int sub_residue(char res1, char res2, align_params_t& params) {
     }
 }
 
-// Inserting a gap to the *other* group, against index i of group
+// Score of inserting a gap to the *other* group, against index i of group
 int gap_score(int num_gaps, seq_group_t& group, int i, align_params_t& params) {
     int score = 0;
 
@@ -77,7 +78,7 @@ int sub_score(seq_group_t& group1, seq_group_t& group2, int i, int j, align_para
     return score;
 }
 
-/**
+/*
  * group1 is represented along the vertical axis, and group2 is on the
  * horizontal axis.
  *
@@ -142,8 +143,7 @@ int forward_pass(seq_group_t& group1, seq_group_t& group2, align_params_t& param
     return alnmt_score;
 }
 
-// Back tracking phase
-// Takes in the backTracking matrix, based on the backtracking Matrix update the gapPositions
+// Backtracking pass. Builds gap positions based on result of forward pass
 void backward_pass(matrix_t& backtrack, gap_pos_t& gap_pos){
     int i = backtrack.size() - 1;
     int j = backtrack[0].size() - 1;
@@ -178,8 +178,7 @@ void backward_pass(matrix_t& backtrack, gap_pos_t& gap_pos){
     std::reverse(gap_pos.begin(), gap_pos.end());
 }
 
-
-
+// Implements align_groups, described in align.h
 int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& params, gap_pos_t& gap_pos) {
     // Initialize matrices
     int num_rows = group1[0].data.length() + 1;
@@ -196,6 +195,7 @@ int align_groups(seq_group_t& group1, seq_group_t& group2, align_params_t& param
     return alnmt_score;
 }
 
+// Implements update_alnmt, described in align.h
 seq_group_t update_alnmt(seq_group_t& group1, seq_group_t& group2, gap_pos_t& gap_pos) {
     int num_seqs = group1.size() + group2.size();
 

@@ -25,4 +25,4 @@ docs:
 	$(DOC) doxygen.conf
 
 clean:
-	/bin/rm -rf *.o $(BM_SEQ) $(BM_PAR)
+	/bin/rm -rf *.o $(BM_SEQ) $(BM_PAR) ./docs
