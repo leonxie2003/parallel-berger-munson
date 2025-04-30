@@ -1,7 +1,7 @@
-/**
- * Parse FASTA files.
- * @author Leon Xie (leonx)
- * @author Taekseung Kim (taekseuk)
+/** @file parse_fasta.h
+ *  Parse FASTA files.
+ *  @author Leon Xie (leonx)
+ *  @author Taekseung Kim (taekseuk)
  */
 
 #ifndef __PARSE_FASTA_H__

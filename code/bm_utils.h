@@ -1,4 +1,4 @@
-/** @file bm_utils.cpp
+/** @file bm_utils.h
  *  Provides utility functions for Berger-Munson.
  *  @author Leon Xie (leonx)
  *  @author Taekseung Kim (taekseuk)
